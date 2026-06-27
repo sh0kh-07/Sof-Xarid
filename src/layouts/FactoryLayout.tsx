@@ -44,10 +44,10 @@ interface AccordionMenuItem extends BaseMenuItem {
 type MenuItem = SimpleMenuItem | AccordionMenuItem;
 
 const menuConfig: MenuItem[] = [
-  { type: 'item', label: 'Bosh sahifa', icon: Home, path: '/client' },
-  { type: 'item', label: 'Xarid', icon: ShoppingCart, path: '/shop' },
-  { type: 'item', label: 'Statistika', icon: ChartColumnIncreasing, path: '/chart' },
-  { type: 'item', label: 'Buyurtmalar', icon: ListOrdered, path: '/order' },
+  { type: 'item', label: 'Bosh sahifa', icon: Home, path: '/factory' },
+  { type: 'item', label: 'Xarid', icon: ShoppingCart, path: '/facShop' },
+  { type: 'item', label: 'Statistika', icon: ChartColumnIncreasing, path: '/facChart' },
+  { type: 'item', label: 'Buyurtmalar', icon: ListOrdered, path: '/facOrder' },
 ];
 
 // ------------------------------
