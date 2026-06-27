@@ -90,7 +90,7 @@ const LoginPage = () => {
               fallbackSrc="https://via.placeholder.com/90x90?text=Logo"
             />
           </Flex>
-
+{/* /какпу */}
           <form onSubmit={handleLogin}>
             <VStack spacing={4}>
               <FormControl isRequired>
