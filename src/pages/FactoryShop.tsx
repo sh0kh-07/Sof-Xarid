@@ -187,6 +187,10 @@ export default function FactoryShop() {
 
   const cardBg = useColorModeValue('white', 'gray.700');
   const borderColor = useColorModeValue('gray.200', 'gray.600');
+  const containerBg = useColorModeValue('white', 'gray.800');
+  const headingColor = useColorModeValue('gray.700', 'white');
+  const inputBg = useColorModeValue('gray.50', 'gray.700');
+  const textColor = useColorModeValue('gray.700', 'white');
 
   const loadProducts = async () => {
     try {
@@ -255,9 +259,7 @@ export default function FactoryShop() {
 
   return (
     <Box minH="100vh">
-      <Box mx="auto" bg={useColorModeValue('white', 'gray.800')}
-        borderRadius="3xl" borderWidth="1px" borderColor={borderColor}
-        boxShadow="xl" p={6}>
+      <Box mx="auto" p={6}>
 
         {/* Header */}
         <Flex direction={{ base: 'column', md: 'row' }} align={{ base: 'start', md: 'center' }}
@@ -265,7 +267,7 @@ export default function FactoryShop() {
           <Box>
             <HStack spacing={2} mb={1}>
               <Icon as={Package} color="blue.500" boxSize={5} />
-              <Heading size="md" fontWeight="bold" color={useColorModeValue('gray.700', 'white')}>
+              <Heading size="md" fontWeight="bold" color={headingColor}>
                 Mahsulotlar
               </Heading>
               <Badge colorScheme="blue" borderRadius="full" px={2}>{filteredProducts.length} ta</Badge>
@@ -280,7 +282,7 @@ export default function FactoryShop() {
               </InputLeftElement>
               <Input placeholder="Qidirish..." value={searchTerm}
                 onChange={e => setSearchTerm(e.target.value)} borderRadius="xl"
-                bg={useColorModeValue('gray.50', 'gray.700')} />
+                bg={inputBg} />
             </InputGroup>
             <Button colorScheme="blue" size="sm" leftIcon={<Plus size={16} />}
               borderRadius="xl" onClick={handleAddClick} px={6}>
@@ -330,7 +332,7 @@ export default function FactoryShop() {
                 <CardBody pb={2}>
                   <Stack spacing={2}>
                     <Text fontWeight="semibold" fontSize="sm" noOfLines={2}
-                      color={useColorModeValue('gray.700', 'white')}>{product.name}</Text>
+                      color={textColor}>{product.name}</Text>
                     <Text fontSize="xs" color="gray.400" noOfLines={2}>{product.description}</Text>
                     <Text fontSize="md" fontWeight="bold" color="blue.500">
                       {formatPrice(product.price)}

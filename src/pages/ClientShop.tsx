@@ -181,7 +181,7 @@ export default function ClientShop() {
 
   return (
     <Box minH="100vh">
-      <Box maxW="1400px" mx="auto" bg="white" borderRadius="3xl"
+      <Box w="full" bg="white" borderRadius="3xl"
         borderWidth="2px" borderColor="gray.200" boxShadow="xl" p={6}>
 
         {/* Header */}

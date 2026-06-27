@@ -8,7 +8,7 @@ import {
   useToast, Spinner,
 } from '@chakra-ui/react';
 import {
-  Search, Truck, PackageCheck, PackageX,
+  Search, Truck, PackageCheck, PackageX, MoreVertical,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import {
