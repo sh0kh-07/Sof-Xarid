@@ -9,6 +9,7 @@ import { BrowserRouter as Router, Routes, Route, Outlet } from 'react-router-dom
 import theme from './theme';
 import MainLayout from './layouts/MainLayout';
 import ProtectedRoute from './components/ProtectedRoute';
+import { AuthProvider } from './context/AuthContext';
 
 // Pages
 import LoginPage from './pages/LoginPage';
@@ -79,19 +80,22 @@ import FactoryDashboard from './pages/FactoryDashboard';
 import FactoryShop from './pages/FactoryShop';
 import FactoryChart from './pages/FactoryChart';
 import FactoryOrder from './pages/FactoryOrder';
+import OrderDetail from './pages/OrderDetail';
+import ProductDetail from './pages/ProductDetail';
 
 export default function App() {
   return (
     <ChakraProvider theme={theme}>
       <ColorModeScript initialColorMode={theme.config.initialColorMode} />
-      <Router>
-        <Routes>
-          {/* Public Routes */}
-          <Route path="/login" element={<LoginPage />} />
+      <AuthProvider>
+        <Router>
+          <Routes>
+            {/* Public Routes */}
+            <Route path="/login" element={<LoginPage />} />
 
-          {/* Protected Routes */}
-          <Route element={<ProtectedRoute />}>
-            <Route element={<MainLayout><Outlet /></MainLayout>}>
+            {/* PROCURER / SUPER_ADMIN — asosiy panel */}
+            <Route element={<ProtectedRoute allowedRoles={['PROCURER', 'SUPER_ADMIN']} />}>
+              <Route element={<MainLayout><Outlet /></MainLayout>}>
               <Route path="/" element={<DashboardPage />} />
               <Route path="/kashkadarya" element={<MainKashkadarya />} />
               <Route path="/kashkadarya/qarshi-detail" element={<MainQarshi />} />
@@ -159,21 +163,34 @@ export default function App() {
               <Route path="/poor-services/vil/qarshi" element={<PoorServicesVilDetail />} />
               <Route path="/poor-services/vil/qarshi/batosh" element={<PoorServicesBatosh />} />
             </Route>
-            <Route element={<CustomerLayout><Outlet /></CustomerLayout>}>
-              <Route path="/client" element={<ClientDashboard />} />
-              <Route path="/shop" element={<ClientShop />} />
-              <Route path="/chart" element={<ClientChart />} />
-              <Route path="/order" element={<ClientOrder />} />
             </Route>
-            <Route element={<FactoryLayout><Outlet /></FactoryLayout>}>
-              <Route path="/factory" element={<FactoryDashboard />} />
-              <Route path="/facShop" element={<FactoryShop />} />
-              <Route path="/facChart" element={<FactoryChart />} />
-              <Route path="/facOrder" element={<FactoryOrder />} />
+
+            {/* CLIENT — mijoz paneli */}
+            <Route element={<ProtectedRoute allowedRoles={['CLIENT']} />}>
+              <Route element={<CustomerLayout><Outlet /></CustomerLayout>}>
+                <Route path="/client" element={<ClientDashboard />} />
+                <Route path="/shop" element={<ClientShop />} />
+                <Route path="/shop/:id" element={<ProductDetail />} />
+                <Route path="/chart" element={<ClientChart />} />
+                <Route path="/order" element={<ClientOrder />} />
+                <Route path="/orders/:id" element={<OrderDetail />} />
+              </Route>
             </Route>
-          </Route>
-        </Routes>
-      </Router>
+
+            {/* SELLER — fabrika paneli */}
+            <Route element={<ProtectedRoute allowedRoles={['SELLER']} />}>
+              <Route element={<FactoryLayout><Outlet /></FactoryLayout>}>
+                <Route path="/factory" element={<FactoryDashboard />} />
+                <Route path="/facShop" element={<FactoryShop />} />
+                <Route path="/facShop/:id" element={<ProductDetail />} />
+                <Route path="/facChart" element={<FactoryChart />} />
+                <Route path="/facOrder" element={<FactoryOrder />} />
+                <Route path="/facOrder/:id" element={<OrderDetail />} />
+              </Route>
+            </Route>
+          </Routes>
+        </Router>
+      </AuthProvider>
     </ChakraProvider>
   );
 }

@@ -1,317 +1,252 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   Box, Flex, Heading, Text, Input, Select, Button,
   Card, CardBody, CardFooter, Image, Stack, Badge,
-  RangeSlider, RangeSliderTrack, RangeSliderFilledTrack,
-  RangeSliderThumb, HStack, VStack, SimpleGrid, Divider,
-  Icon, useColorModeValue, Checkbox, CheckboxGroup,
-  InputGroup, InputLeftElement, Accordion, AccordionItem,
-  AccordionButton, AccordionPanel, AccordionIcon
+  HStack, VStack, SimpleGrid, Divider, Icon,
+  useColorModeValue, InputGroup, InputLeftElement,
+  Modal, ModalOverlay, ModalContent, ModalHeader,
+  ModalBody, ModalFooter, ModalCloseButton,
+  NumberInput, NumberInputField, NumberInputStepper,
+  NumberIncrementStepper, NumberDecrementStepper,
+  useDisclosure, useToast, Spinner,
+  FormControl, FormLabel,
 } from '@chakra-ui/react';
-import { Search, SlidersHorizontal, X } from 'lucide-react';
+import { Search, Package } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { getProducts, Product } from '../api/products';
+import { createOrder } from '../api/orders';
+import { useAuth } from '../context/AuthContext';
+import { getImageUrl } from '../api/axios';
 
-// ==================== ДАННЫЕ ====================
-const MANUFACTURERS = [
-  {
-    id: 'm1',
-    name: 'Tashkent Furniture Factory',
-    nameUz: 'Toshkent Mebel Fabrikasi',
-    location: 'Tashkent, Sergeli district',
-    locationUz: 'Toshkent, Sergeli tumani',
-    rating: 4.8,
-  },
-  {
-    id: 'm2',
-    name: 'Uzbek Tech Assembling',
-    nameUz: 'O‘zbek Tech Assembling',
-    location: 'Tashkent, Yakkasaray district',
-    locationUz: 'Toshkent, Yakkasaroy tumani',
-    rating: 4.9,
-  },
-  {
-    id: 'm3',
-    name: 'Fergana Paper Mill',
-    nameUz: 'Farg‘ona Qog‘oz Zavodi',
-    location: 'Fergana, Fergana region',
-    locationUz: 'Farg‘ona, Farg‘ona viloyati',
-    rating: 4.7,
-  }
-];
+const formatPrice = (price: number) =>
+  new Intl.NumberFormat('uz-UZ').format(price) + " so'm";
 
-const PRODUCTS = [
-  {
-    id: 'p1',
-    nameUz: 'Ergonomic ofis stoli (160x80 sm)',
-    category: 'furniture',
-    manufacturerId: 'm1',
-    price: 320,
-    minOrderUz: '1 ta',
-    locationUz: 'Toshkent, Sergeli tumani',
-    image: 'https://cervany.com/cdn/shop/files/Standing_desk_oak_veneer_3_600x.jpg',
-    rating: 4.8,
-  },
-  {
-    id: 'p2',
-    nameUz: 'Kompyuter (Intel Core i5, 16GB RAM, 512GB SSD)',
-    category: 'electronics',
-    manufacturerId: 'm2',
-    price: 850,
-    minOrderUz: '1 ta',
-    locationUz: 'Toshkent, Yakkasaroy tumani',
-    image: 'https://cdn.mediapark.uz/imgs/800aacab-93f2-48d4-a119-1c0de1127cba_%D0%9C%D0%BE%D0%BD%D1%82%D0%B0%D0%B6%D0%BD%D0%B0%D1%8F-%D0%BE%D0%B1%D0%BB%D0%B0%D1%81%D1%82%D1%8C-1_1300.webp',
-    rating: 4.9,
-  },
-  {
-    id: 'p3',
-    nameUz: 'Premium A4 qog‘oz (80 g/m², 500 varag)',
-    category: 'office_supplies',
-    manufacturerId: 'm3',
-    price: 8,
-    minOrderUz: '10 quti (5 000 varaq)',
-    locationUz: 'Farg‘ona, Farg‘ona viloyati',
-    image: 'https://images.uzum.uz/d50j9c0jsv1neacpdqg0/t_product_540_high.jpg',
-    rating: 4.7,
-  }
-];
+// ==================== BUYURTMA MODALI ====================
+interface OrderModalProps {
+  product: Product | null;
+  isOpen: boolean;
+  onClose: () => void;
+  onOrdered: () => void;
+}
 
-// ==================== КОМПОНЕНТ ====================
-export default function ProcurementMarketplace() {
-  // --- Уникальные значения для фильтров ---
-  const allRegions = [...new Set(PRODUCTS.map(p => p.locationUz))];
-  const allCategories = [...new Set(PRODUCTS.map(p => p.category))];
-  const allManufacturers = MANUFACTURERS.map(m => ({ id: m.id, name: m.nameUz }));
+function OrderModal({ product, isOpen, onClose, onOrdered }: OrderModalProps) {
+  const [qty, setQty] = useState(1);
+  const [isLoading, setIsLoading] = useState(false);
+  const toast = useToast();
+  const { user } = useAuth();
 
-  const categoryLabels = {
-    furniture: 'Mebel',
-    electronics: 'Elektronika',
-    office_supplies: 'Kantselyariya',
+  useEffect(() => { if (isOpen) setQty(1); }, [isOpen]);
+
+  const handleOrder = async () => {
+    if (!product || !user) return;
+    setIsLoading(true);
+    try {
+      await createOrder({
+        productId: product.id,
+        quantity: qty,
+        clientId: user.id,
+        sellerId: '', // backend o'zi aniqlab olishi mumkin yoki product.sellerId
+      });
+      toast({
+        title: 'Buyurtma yuborildi!',
+        description: `${product.name} — ${qty} ta`,
+        status: 'success', duration: 3000, isClosable: true, position: 'top-right',
+      });
+      onOrdered();
+      onClose();
+    } catch (err: any) {
+      toast({
+        title: 'Xatolik',
+        description: err?.response?.data?.message || err.message,
+        status: 'error', duration: 3000, isClosable: true, position: 'top-right',
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  // --- Состояния фильтров ---
+  if (!product) return null;
+
+  return (
+    <Modal isOpen={isOpen} onClose={onClose} isCentered size="md">
+      <ModalOverlay backdropFilter="blur(4px)" />
+      <ModalContent borderRadius="2xl">
+        <ModalHeader borderBottom="1px solid" borderColor="gray.100" pb={3}>
+          Buyurtma berish
+        </ModalHeader>
+        <ModalCloseButton />
+        <ModalBody pt={4}>
+          <Stack spacing={4}>
+            <HStack spacing={3} align="start">
+              <Image src={getImageUrl(product.image)} alt={product.name} boxSize="72px"
+                objectFit="cover" borderRadius="lg" fallbackSrc="https://via.placeholder.com/72" />
+              <Box>
+                <Text fontWeight="semibold" fontSize="sm" noOfLines={2}>{product.name}</Text>
+                <Text fontSize="xs" color="gray.500" mt={1}>{product.description}</Text>
+              </Box>
+            </HStack>
+            <Divider />
+            <FormControl>
+              <FormLabel fontSize="sm" fontWeight="semibold" color="gray.600">Miqdor</FormLabel>
+              <NumberInput min={1} max={product.stock} value={qty}
+                onChange={(_, val) => setQty(val || 1)}>
+                <NumberInputField borderRadius="lg" />
+                <NumberInputStepper>
+                  <NumberIncrementStepper />
+                  <NumberDecrementStepper />
+                </NumberInputStepper>
+              </NumberInput>
+            </FormControl>
+            <Box bg="blue.50" borderRadius="lg" p={3}>
+              <Flex justify="space-between">
+                <Text fontSize="sm" color="gray.600">Jami summa:</Text>
+                <Text fontSize="sm" fontWeight="bold" color="blue.600">
+                  {formatPrice(product.price * qty)}
+                </Text>
+              </Flex>
+              <Flex justify="space-between" mt={1}>
+                <Text fontSize="xs" color="gray.400">Mavjud zaxira:</Text>
+                <Text fontSize="xs" color="gray.500">{product.stock} ta</Text>
+              </Flex>
+            </Box>
+          </Stack>
+        </ModalBody>
+        <ModalFooter gap={2}>
+          <Button variant="outline" onClick={onClose} borderRadius="xl" size="sm">Bekor qilish</Button>
+          <Button colorScheme="blue" onClick={handleOrder} borderRadius="xl" size="sm"
+            isLoading={isLoading} leftIcon={<Package size={15} />}>
+            Buyurtma berish
+          </Button>
+        </ModalFooter>
+      </ModalContent>
+    </Modal>
+  );
+}
+
+// ==================== ASOSIY KOMPONENT ====================
+export default function ClientShop() {
+  const [products, setProducts] = useState<Product[]>([]);
+  const [isPageLoading, setIsPageLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedRegions, setSelectedRegions] = useState([]);
-  const [selectedCategories, setSelectedCategories] = useState([]);
-  const [selectedManufacturers, setSelectedManufacturers] = useState([]);
-  const [priceRange, setPriceRange] = useState([0, 1000]);
   const [sortBy, setSortBy] = useState('price_asc');
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+
+  const orderModal = useDisclosure();
+  const toast = useToast();
+  const navigate = useNavigate();
 
   const cardBg = useColorModeValue('white', 'gray.700');
   const borderColor = useColorModeValue('gray.200', 'gray.600');
 
-  // --- Фильтрация и сортировка ---
-  const filteredProducts = useMemo(() => {
-    return PRODUCTS.filter(product => {
-      const matchesSearch = product.nameUz.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesRegion = selectedRegions.length === 0 || selectedRegions.includes(product.locationUz);
-      const matchesCategory = selectedCategories.length === 0 || selectedCategories.includes(product.category);
-      const matchesManufacturer = selectedManufacturers.length === 0 || selectedManufacturers.includes(product.manufacturerId);
-      const matchesPrice = product.price >= priceRange[0] && product.price <= priceRange[1];
-      return matchesSearch && matchesRegion && matchesCategory && matchesManufacturer && matchesPrice;
-    });
-  }, [searchTerm, selectedRegions, selectedCategories, selectedManufacturers, priceRange]);
-
-  const sortedProducts = useMemo(() => {
-    const sorted = [...filteredProducts];
-    switch (sortBy) {
-      case 'price_asc': sorted.sort((a, b) => a.price - b.price); break;
-      case 'price_desc': sorted.sort((a, b) => b.price - a.price); break;
-      case 'rating': sorted.sort((a, b) => b.rating - a.rating); break;
-      default: break;
+  const loadProducts = async () => {
+    try {
+      const data = await getProducts();
+      setProducts(data);
+    } catch (err: any) {
+      toast({
+        title: 'Mahsulotlarni yuklashda xatolik',
+        description: err?.response?.data?.message || err.message,
+        status: 'error', position: 'top-right', isClosable: true,
+      });
+    } finally {
+      setIsPageLoading(false);
     }
-    return sorted;
-  }, [filteredProducts, sortBy]);
-
-  const resetFilters = () => {
-    setSearchTerm('');
-    setSelectedRegions([]);
-    setSelectedCategories([]);
-    setSelectedManufacturers([]);
-    setPriceRange([0, 1000]);
-    setSortBy('price_asc');
   };
 
-  const formatPrice = (price) => {
-    return new Intl.NumberFormat('uz-UZ', {
-      style: 'currency',
-      currency: 'UZS',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(price * 1000);
+  useEffect(() => { loadProducts(); }, []);
+
+  const handleOrderClick = (product: Product) => {
+    setSelectedProduct(product);
+    orderModal.onOpen();
   };
+
+  const filteredAndSorted = useMemo(() => {
+    let list = products.filter(p =>
+      p.name.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+    switch (sortBy) {
+      case 'price_asc': list.sort((a, b) => a.price - b.price); break;
+      case 'price_desc': list.sort((a, b) => b.price - a.price); break;
+    }
+    return list;
+  }, [products, searchTerm, sortBy]);
+
+  if (isPageLoading) {
+    return (
+      <Flex minH="60vh" align="center" justify="center">
+        <Spinner size="xl" color="blue.500" />
+      </Flex>
+    );
+  }
 
   return (
     <Box minH="100vh">
-      {/* Основная карточка с увеличенным радиусом и бордером */}
-      <Box
-        maxW="1400px"
-        mx="auto"
-        bg="white"
-        borderRadius="3xl"
-        borderWidth="2px"
-        borderColor="gray.200"
-        boxShadow="xl"
-        p={6}
-        transition="all 0.2s"
-      >
-        {/* Поиск и заголовок */}
-        <Flex direction={{ base: 'column', md: 'row' }} align="center" justify="space-between" mb={4} gap={4}>
-          <Heading size="md" fontWeight="bold" color="blue.600" display="flex" alignItems="center">
-            Xaridlari
-          </Heading>
-          <InputGroup maxW="400px" size="md">
-            <InputLeftElement pointerEvents="none">
-              <Search size={18} color="gray.400" />
-            </InputLeftElement>
-            <Input
-              placeholder="Mahsulot izlash..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              borderRadius="xl"
-              bg="gray.50"
-              borderColor="gray.300"
-              _focus={{ borderColor: 'blue.500', boxShadow: '0 0 0 1px #3182ce' }}
-            />
-          </InputGroup>
+      <Box maxW="1400px" mx="auto" bg="white" borderRadius="3xl"
+        borderWidth="2px" borderColor="gray.200" boxShadow="xl" p={6}>
+
+        {/* Header */}
+        <Flex direction={{ base: 'column', md: 'row' }} align="center"
+          justify="space-between" mb={6} gap={4}>
+          <Heading size="md" fontWeight="bold" color="blue.600">Xaridlar</Heading>
+          <HStack spacing={3}>
+            <InputGroup maxW="300px" size="md">
+              <InputLeftElement pointerEvents="none">
+                <Search size={18} color="gray" />
+              </InputLeftElement>
+              <Input placeholder="Mahsulot izlash..." value={searchTerm}
+                onChange={e => setSearchTerm(e.target.value)} borderRadius="xl"
+                bg="gray.50" borderColor="gray.300"
+                _focus={{ borderColor: 'blue.500', boxShadow: '0 0 0 1px #3182ce' }} />
+            </InputGroup>
+            <Select size="md" value={sortBy} onChange={e => setSortBy(e.target.value)}
+              borderRadius="xl" bg="gray.50" borderColor="gray.300" maxW="200px">
+              <option value="price_asc">Narx: arzon → qimmat</option>
+              <option value="price_desc">Narx: qimmat → arzon</option>
+            </Select>
+          </HStack>
         </Flex>
 
-        {/* Фильтры (аккордеон) */}
-        <Accordion allowToggle defaultIndex={[0]} mb={6}>
-          <AccordionItem border="1px solid" borderColor={borderColor} borderRadius="2xl" overflow="hidden">
-            <AccordionButton _hover={{ bg: 'gray.50' }} px={4} py={3}>
-              <HStack flex="1" spacing={2}>
-                <Icon as={SlidersHorizontal} boxSize={5} color="blue.500" />
-                <Heading size="sm" fontWeight="semibold">Filtrlar</Heading>
-                <Badge colorScheme="blue" rounded="full" px={2}>
-                  {selectedRegions.length + selectedCategories.length + selectedManufacturers.length > 0 ? '🟢' : '⚪'}
-                </Badge>
-              </HStack>
-              <AccordionIcon />
-            </AccordionButton>
-            <AccordionPanel pb={4} pt={2}>
-              <SimpleGrid columns={{ base: 1, md: 2, lg: 5 }} spacing={6}>
-                {/* Регион */}
-                <Box>
-                  <Text fontWeight="semibold" fontSize="sm" mb={2}>Viloyat</Text>
-                  <CheckboxGroup value={selectedRegions} onChange={setSelectedRegions}>
-                    <VStack align="start" spacing={1} maxH="120px" overflowY="auto">
-                      {allRegions.map(region => (
-                        <Checkbox key={region} value={region} size="sm" colorScheme="blue">{region}</Checkbox>
-                      ))}
-                    </VStack>
-                  </CheckboxGroup>
-                </Box>
+        <Text fontSize="sm" color="gray.500" mb={4}>{filteredAndSorted.length} ta mahsulot</Text>
 
-                {/* Категория */}
-                <Box>
-                  <Text fontWeight="semibold" fontSize="sm" mb={2}>Kategoriya</Text>
-                  <CheckboxGroup value={selectedCategories} onChange={setSelectedCategories}>
-                    <VStack align="start" spacing={1}>
-                      {allCategories.map(cat => (
-                        <Checkbox key={cat} value={cat} size="sm" colorScheme="blue">{categoryLabels[cat] || cat}</Checkbox>
-                      ))}
-                    </VStack>
-                  </CheckboxGroup>
-                </Box>
-
-                {/* Производитель */}
-                <Box>
-                  <Text fontWeight="semibold" fontSize="sm" mb={2}>Ishlab chiqaruvchi</Text>
-                  <CheckboxGroup value={selectedManufacturers} onChange={setSelectedManufacturers}>
-                    <VStack align="start" spacing={1} maxH="120px" overflowY="auto">
-                      {allManufacturers.map(m => (
-                        <Checkbox key={m.id} value={m.id} size="sm" colorScheme="blue">{m.name}</Checkbox>
-                      ))}
-                    </VStack>
-                  </CheckboxGroup>
-                </Box>
-
-                {/* Цена */}
-                <Box>
-                  <Text fontWeight="semibold" fontSize="sm" mb={2}>Narx oralig‘i (ming so‘m)</Text>
-                  <RangeSlider
-                    min={0} max={1000} step={10}
-                    value={priceRange} onChange={setPriceRange}
-                    colorScheme="blue"
-                  >
-                    <RangeSliderTrack><RangeSliderFilledTrack /></RangeSliderTrack>
-                    <RangeSliderThumb index={0} />
-                    <RangeSliderThumb index={1} />
-                  </RangeSlider>
-                  <HStack justify="space-between" fontSize="xs" color="gray.500">
-                    <Text>{priceRange[0]} ming</Text>
-                    <Text>{priceRange[1]} ming</Text>
-                  </HStack>
-                </Box>
-
-                {/* Сортировка + сброс */}
-                <Box>
-                  <Text fontWeight="semibold" fontSize="sm" mb={2}>Saralash</Text>
-                  <Select size="sm" value={sortBy} onChange={(e) => setSortBy(e.target.value)} borderRadius="lg" borderColor="gray.300">
-                    <option value="price_asc">Narx: arzon → qimmat</option>
-                    <option value="price_desc">Narx: qimmat → arzon</option>
-                    <option value="rating">Reyting bo‘yicha</option>
-                  </Select>
-                  <Button size="sm" variant="outline" colorScheme="red" mt={3} w="full" onClick={resetFilters} borderRadius="xl">
-                    <Icon as={X} mr={1} boxSize={4} /> Filtrlarni tozalash
-                  </Button>
-                </Box>
-              </SimpleGrid>
-            </AccordionPanel>
-          </AccordionItem>
-        </Accordion>
-
-        {/* Количество найденных товаров */}
-        <Flex justify="space-between" align="center" mb={4}>
-          <Text fontSize="sm" color="gray.500">
-            {sortedProducts.length} ta mahsulot topildi
-          </Text>
-        </Flex>
-
-        {/* Список товаров */}
-        {sortedProducts.length === 0 ? (
-          <Box textAlign="center" py={10}>
-            <Text fontSize="lg" color="gray.500">Hech qanday mahsulot topilmadi</Text>
-            <Button mt={4} onClick={resetFilters} size="md" borderRadius="xl">Filtrni tozalash</Button>
+        {filteredAndSorted.length === 0 ? (
+          <Box textAlign="center" py={16}>
+            <Icon as={Package} boxSize={10} color="gray.300" mb={3} />
+            <Text fontSize="lg" color="gray.400">Hech qanday mahsulot topilmadi</Text>
           </Box>
         ) : (
           <SimpleGrid columns={{ base: 1, md: 2, lg: 3, xl: 4 }} spacing={6}>
-            {sortedProducts.map(product => (
-              <Card
-                key={product.id}
-                bg={cardBg}
-                borderWidth="2px"
-                borderColor={borderColor}
-                borderRadius="2xl"
-                overflow="hidden"
-                boxShadow="md"
-                transition="all 0.2s"
+            {filteredAndSorted.map(product => (
+              <Card key={product.id} bg={cardBg} borderWidth="2px"
+                borderColor={borderColor} borderRadius="2xl" overflow="hidden"
+                boxShadow="md" transition="all 0.2s" cursor="pointer"
                 _hover={{ transform: 'translateY(-4px)', boxShadow: 'lg' }}
-              >
-                <Image
-                  src={product.image}
-                  alt={product.nameUz}
-                  h="200px"
-                  w="full"
+                onClick={() => navigate(`/shop/${product.id}`)}>
+
+                <Image src={getImageUrl(product.image)} alt={product.name} h="200px" w="full"
                   objectFit="cover"
-                  fallbackSrc="https://via.placeholder.com/300x200?text=Rasm+mavjud+emas"
-                />
+                  fallbackSrc="https://via.placeholder.com/300x200?text=Rasm+mavjud+emas" />
+
                 <CardBody>
                   <Stack spacing={2}>
-                    <Heading size="sm" noOfLines={2}>{product.nameUz}</Heading>
-                    <Text fontSize="sm" color="gray.500">{product.locationUz}</Text>
-                    <HStack>
-                      <Badge colorScheme="blue" borderRadius="full" px={3} py={1}>{categoryLabels[product.category] || product.category}</Badge>
-                      <Badge colorScheme="green" borderRadius="full" px={3} py={1}>⭐ {product.rating}</Badge>
-                    </HStack>
+                    <Heading size="sm" noOfLines={2}>{product.name}</Heading>
+                    <Text fontSize="sm" color="gray.500" noOfLines={2}>{product.description}</Text>
                     <Text fontSize="lg" fontWeight="bold" color="blue.600">
                       {formatPrice(product.price)}
                     </Text>
-                    <Text fontSize="xs" color="gray.400">Min. buyurtma: {product.minOrderUz}</Text>
+                    <Text fontSize="xs" fontWeight="semibold"
+                      color={product.stock > 10 ? 'green.500' : product.stock > 0 ? 'orange.500' : 'red.500'}>
+                      Zaxira: {product.stock} ta
+                    </Text>
                   </Stack>
                 </CardBody>
-                <CardFooter>
-                  <Button w="full" size="md" colorScheme="blue" variant="outline" borderRadius="xl">
-                    Ko‘rish
+
+                <CardFooter onClick={e => e.stopPropagation()}>
+                  <Button w="full" size="md" colorScheme="blue"
+                    variant={product.stock > 0 ? 'outline' : 'ghost'}
+                    borderRadius="xl" isDisabled={product.stock === 0}
+                    leftIcon={<Package size={15} />}
+                    onClick={() => handleOrderClick(product)}>
+                    {product.stock > 0 ? 'Buyurtma berish' : 'Mavjud emas'}
                   </Button>
                 </CardFooter>
               </Card>
@@ -319,6 +254,13 @@ export default function ProcurementMarketplace() {
           </SimpleGrid>
         )}
       </Box>
+
+      <OrderModal
+        product={selectedProduct}
+        isOpen={orderModal.isOpen}
+        onClose={orderModal.onClose}
+        onOrdered={loadProducts}
+      />
     </Box>
   );
 }

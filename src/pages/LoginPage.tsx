@@ -6,7 +6,10 @@ import {
 } from '@chakra-ui/react';
 import { User, Lock, Eye, EyeOff } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import Logo from '../Logo/photo_2026-06-26_14.06.30-removebg-preview.png'; // ваш логотип
+import { useAuth } from '../context/AuthContext';
+import { loginApi } from '../api/auth';
+import { getHomeRoute } from '../utils/roleRedirect';
+import Logo from '../Logo/photo_2026-06-26_14.06.30-removebg-preview.png';
 
 const LoginPage = () => {
   const [username, setUsername] = useState('');
@@ -15,36 +18,46 @@ const LoginPage = () => {
   const [isLoading, setIsLoading] = useState(false);
   const toast = useToast();
   const navigate = useNavigate();
+  const { login } = useAuth();
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
-    setTimeout(() => {
-      if (username === 'admin' && password === 'admin') {
-        localStorage.setItem('isAuthenticated', 'true');
-        localStorage.setItem('user', JSON.stringify({ name: 'Shoxrux T.', role: 'Administrator' }));
-        toast({
-          title: 'Muvaffaqiyatli kirish',
-          description: 'Hush kelibsiz, Shoxrux T.',
-          status: 'success',
-          duration: 3000,
-          isClosable: true,
-          position: 'top-right',
-        });
-        navigate('/');
-      } else {
-        toast({
-          title: 'Xatolik',
-          description: 'Login yoki parol notoʻgʻri',
-          status: 'error',
-          duration: 3000,
-          isClosable: true,
-          position: 'top-right',
-        });
-      }
+    try {
+      const data = await loginApi({ username, password });
+
+      // Token va user ma'lumotlarini contextga saqlash
+      login(data.user, data.token);
+
+      toast({
+        title: 'Muvaffaqiyatli kirish',
+        description: `Xush kelibsiz, ${data.user.full_name}`,
+        status: 'success',
+        duration: 3000,
+        isClosable: true,
+        position: 'top-right',
+      });
+
+      // Rolga qarab yo'naltirish
+      navigate(getHomeRoute(data.user), { replace: true });
+    } catch (error: any) {
+      const message =
+        error?.response?.data?.message ||
+        error?.message ||
+        'Login yoki parol noto\'g\'ri';
+
+      toast({
+        title: 'Xatolik',
+        description: message,
+        status: 'error',
+        duration: 3000,
+        isClosable: true,
+        position: 'top-right',
+      });
+    } finally {
       setIsLoading(false);
-    }, 1000);
+    }
   };
 
   return (
@@ -66,7 +79,7 @@ const LoginPage = () => {
         borderColor="gray.100"
       >
         <VStack spacing={6} align="stretch">
-          {/* Логотип – крупно и по центру */}
+          {/* Logo */}
           <Flex justify="center">
             <Image
               src={Logo}
@@ -74,9 +87,10 @@ const LoginPage = () => {
               h="200px"
               w="auto"
               objectFit="contain"
-              fallbackSrc="https://via.placeholder.com/90x90?text=Logo" // если файла нет
+              fallbackSrc="https://via.placeholder.com/90x90?text=Logo"
             />
           </Flex>
+
           <form onSubmit={handleLogin}>
             <VStack spacing={4}>
               <FormControl isRequired>
@@ -99,6 +113,7 @@ const LoginPage = () => {
                   />
                 </InputGroup>
               </FormControl>
+
               <FormControl isRequired>
                 <FormLabel fontSize="sm" fontWeight="medium" color="gray.600">
                   Parol
@@ -156,7 +171,6 @@ const LoginPage = () => {
             </VStack>
           </form>
 
-          {/* Дополнительный текст внизу – можно убрать или оставить */}
           <Text fontSize="xs" color="gray.400" textAlign="center">
             © 2025 Barcha huquqlar himoyalangan
           </Text>
