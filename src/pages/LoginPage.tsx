@@ -2,12 +2,11 @@ import React, { useState } from 'react';
 import {
   Box, Flex, VStack, Heading, Text, Input, Button,
   InputGroup, InputLeftElement, InputRightElement,
-  FormControl, FormLabel, useToast, Image,
-  HStack, Divider, IconButton
+  FormControl, FormLabel, useToast, Image, Link
 } from '@chakra-ui/react';
 import { User, Lock, Eye, EyeOff } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import Logo from '../Logo/Logo.jpg';
+import Logo from '../Logo/photo_2026-06-26_14.06.30-removebg-preview.png'; // ваш логотип
 
 const LoginPage = () => {
   const [username, setUsername] = useState('');
@@ -17,16 +16,14 @@ const LoginPage = () => {
   const toast = useToast();
   const navigate = useNavigate();
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = (e) => {
     e.preventDefault();
     setIsLoading(true);
 
-    // Mock authentication logic
     setTimeout(() => {
-      if (username === 'usd_admin' && password === '123456') {
+      if (username === 'admin' && password === 'admin') {
         localStorage.setItem('isAuthenticated', 'true');
         localStorage.setItem('user', JSON.stringify({ name: 'Shoxrux T.', role: 'Administrator' }));
-        
         toast({
           title: 'Muvaffaqiyatli kirish',
           description: 'Hush kelibsiz, Shoxrux T.',
@@ -35,7 +32,6 @@ const LoginPage = () => {
           isClosable: true,
           position: 'top-right',
         });
-        
         navigate('/');
       } else {
         toast({
@@ -52,118 +48,118 @@ const LoginPage = () => {
   };
 
   return (
-    <Flex minH="100vh" align="center" justify="center" bg="gray.50" p={4}>
+    <Flex
+      minH="100vh"
+      align="center"
+      justify="center"
+      bgGradient="linear(to-br, blue.50, purple.50)"
+      p={4}
+    >
       <Box
-        maxW="400px"
+        maxW="420px"
         w="full"
         bg="white"
-        p={10}
+        p={8}
         borderRadius="3xl"
-        boxShadow="xl"
+        boxShadow="2xl"
         border="1px solid"
-        borderColor="gray.200"
+        borderColor="gray.100"
       >
-        <VStack spacing={8} align="stretch">
-          <VStack spacing={4} align="center">
-            <Image src={Logo} alt="Logo" h="80px" w="auto" objectFit="contain" />
-            <Box textAlign="center">
-              <Heading size="lg" fontWeight="extrabold" color="gray.800" letterSpacing="tight">
-                Kirish
-              </Heading>
-              <Text color="gray.500" fontSize="sm" mt={1}>
-                Ijtimoiy Himoya Nazorat Paneli
-              </Text>
-            </Box>
-          </VStack>
-
+        <VStack spacing={6} align="stretch">
+          {/* Логотип – крупно и по центру */}
+          <Flex justify="center">
+            <Image
+              src={Logo}
+              alt="Logo"
+              h="200px"
+              w="auto"
+              objectFit="contain"
+              fallbackSrc="https://via.placeholder.com/90x90?text=Logo" // если файла нет
+            />
+          </Flex>
           <form onSubmit={handleLogin}>
-            <VStack spacing={5}>
+            <VStack spacing={4}>
               <FormControl isRequired>
-                <FormLabel color="gray.700" fontSize="sm" fontWeight="semibold">Foydalanuvchi nomi</FormLabel>
-                <InputGroup size="lg">
+                <FormLabel fontSize="sm" fontWeight="medium" color="gray.600">
+                  Foydalanuvchi nomi
+                </FormLabel>
+                <InputGroup size="md">
                   <InputLeftElement pointerEvents="none">
-                    <User size={20} color="gray.400" />
+                    <User size={18} color="gray.400" />
                   </InputLeftElement>
                   <Input
                     type="text"
-                    placeholder="Loginni kiriting"
+                    placeholder="Loginingizni kiriting"
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
                     bg="gray.50"
-                    border="1px solid"
                     borderColor="gray.200"
-                    fontSize="md"
-                    _focus={{ borderColor: 'brand.500', boxShadow: '0 0 0 1px #343c75' }}
-                    color="gray.800"
-                    borderRadius="xl"
+                    _focus={{ borderColor: 'blue.500', boxShadow: '0 0 0 1px #3182ce' }}
+                    borderRadius="lg"
                   />
                 </InputGroup>
               </FormControl>
-
               <FormControl isRequired>
-                <FormLabel color="gray.700" fontSize="sm" fontWeight="semibold">Parol</FormLabel>
-                <InputGroup size="lg">
+                <FormLabel fontSize="sm" fontWeight="medium" color="gray.600">
+                  Parol
+                </FormLabel>
+                <InputGroup size="md">
                   <InputLeftElement pointerEvents="none">
-                    <Lock size={20} color="gray.400" />
+                    <Lock size={18} color="gray.400" />
                   </InputLeftElement>
                   <Input
                     type={showPassword ? 'text' : 'password'}
-                    placeholder="••••••••"
+                    placeholder="Parolingizni kiriting"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     bg="gray.50"
-                    border="1px solid"
                     borderColor="gray.200"
-                    fontSize="md"
-                    _focus={{ borderColor: 'brand.500', boxShadow: '0 0 0 1px #343c75' }}
-                    color="gray.800"
-                    borderRadius="xl"
+                    _focus={{ borderColor: 'blue.500', boxShadow: '0 0 0 1px #3182ce' }}
+                    borderRadius="lg"
                   />
-                  <InputRightElement width="3.5rem">
-                    <IconButton
-                      aria-label="Toggle Password"
+                  <InputRightElement>
+                    <Button
                       variant="ghost"
                       size="sm"
-                      icon={showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                       onClick={() => setShowPassword(!showPassword)}
                       color="gray.400"
-                      _hover={{ color: 'brand.500', bg: 'transparent' }}
-                    />
+                      _hover={{ color: 'blue.500' }}
+                    >
+                      {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                    </Button>
                   </InputRightElement>
                 </InputGroup>
               </FormControl>
 
               <Button
                 type="submit"
-                colorScheme="brand"
+                colorScheme="blue"
                 size="lg"
                 w="full"
                 isLoading={isLoading}
                 loadingText="Kirish..."
-                mt={4}
-                height="56px"
-                borderRadius="xl"
-                fontSize="md"
-                fontWeight="bold"
-                boxShadow="lg"
-                _hover={{ transform: 'translateY(-1px)', boxShadow: 'xl' }}
-                _active={{ transform: 'translateY(0)' }}
+                mt={2}
+                borderRadius="lg"
+                fontWeight="semibold"
+                boxShadow="md"
+                _hover={{ transform: 'translateY(-2px)', boxShadow: 'lg' }}
+                transition="all 0.2s"
               >
                 Kirish
               </Button>
+
+              <Text fontSize="sm" color="blue.500" textAlign="right" w="full">
+                <Link href="#" onClick={(e) => e.preventDefault()}>
+                  Parolingizni unutdingizmi?
+                </Link>
+              </Text>
             </VStack>
           </form>
 
-          <VStack spacing={4}>
-            <HStack w="full">
-              <Divider borderColor="gray.200" />
-              <Text fontSize="xs" color="gray.400" whiteSpace="nowrap" fontWeight="medium" letterSpacing="widest">SUPPORT</Text>
-              <Divider borderColor="gray.200" />
-            </HStack>
-            <Text fontSize="xs" color="gray.500" textAlign="center" px={4} lineHeight="tall">
-              Agar tizimga kirishda muammo bo'lsa, ma'muriyat bilan bog'laning.
-            </Text>
-          </VStack>
+          {/* Дополнительный текст внизу – можно убрать или оставить */}
+          <Text fontSize="xs" color="gray.400" textAlign="center">
+            © 2025 Barcha huquqlar himoyalangan
+          </Text>
         </VStack>
       </Box>
     </Flex>

@@ -69,6 +69,13 @@ import PoorServicesVil from './pages/PoorServicesVil';
 import PoorServicesVilDetail from './pages/PoorServicesVilDetail';
 import PoorServicesBatosh from './pages/PoorServicesBatosh';
 import RedFlag from './pages/RedFlag';
+import CustomerLayout from './layouts/CustomerLayout';
+import ClientDashboard from './pages/ClientDashboard';
+import ClientShop from './pages/ClientShop';
+import ClientChart from './pages/ClientChart';
+import ClientOrder from './pages/ClientOrder';
+import FactoryLayout from './layouts/FactoryLayout';
+import FactoryDashboard from './pages/FactoryDashboard';
 
 export default function App() {
   return (
@@ -138,16 +145,25 @@ export default function App() {
               <Route path="/regions" element={<Regions />} />
               <Route path="/mahalla" element={<Mahalla />} />
               <Route path="/reports" element={<Reports />} />
-              
+
               <Route path="/job-placement" element={<JobPlacement />} />
               <Route path="/job-placement/vil" element={<JobPlacementVil />} />
               <Route path="/job-placement/vil/qarshi" element={<JobPlacementVilDetail />} />
               <Route path="/job-placement/vil/qarshi/batosh" element={<JobPlacementBatosh />} />
-              
+
               <Route path="/poor-services" element={<PoorServices />} />
               <Route path="/poor-services/vil" element={<PoorServicesVil />} />
               <Route path="/poor-services/vil/qarshi" element={<PoorServicesVilDetail />} />
               <Route path="/poor-services/vil/qarshi/batosh" element={<PoorServicesBatosh />} />
+            </Route>
+            <Route element={<CustomerLayout><Outlet /></CustomerLayout>}>
+              <Route path="/client" element={<ClientDashboard />} />
+              <Route path="/shop" element={<ClientShop />} />
+              <Route path="/chart" element={<ClientChart />} />
+              <Route path="/order" element={<ClientOrder />} />
+            </Route>
+            <Route element={<FactoryLayout><Outlet /></FactoryLayout>}>
+              <Route path="/factory" element={<FactoryDashboard />} />
             </Route>
           </Route>
         </Routes>
