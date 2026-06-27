@@ -76,6 +76,9 @@ import ClientChart from './pages/ClientChart';
 import ClientOrder from './pages/ClientOrder';
 import FactoryLayout from './layouts/FactoryLayout';
 import FactoryDashboard from './pages/FactoryDashboard';
+import FactoryShop from './pages/FactoryShop';
+import FactoryChart from './pages/FactoryChart';
+import FactoryOrder from './pages/FactoryOrder';
 
 export default function App() {
   return (
@@ -164,6 +167,9 @@ export default function App() {
             </Route>
             <Route element={<FactoryLayout><Outlet /></FactoryLayout>}>
               <Route path="/factory" element={<FactoryDashboard />} />
+              <Route path="/facShop" element={<FactoryShop />} />
+              <Route path="/facChart" element={<FactoryChart />} />
+              <Route path="/facOrder" element={<FactoryOrder />} />
             </Route>
           </Route>
         </Routes>
